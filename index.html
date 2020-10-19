@@ -1,0 +1,214 @@
+<html>
+  <head>
+    <title>Title</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+      crossorigin="anonymous"
+    />
+  </head>
+  <style>
+    div {
+      margin-bottom: 15px;
+    }
+  </style>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-4"></div>
+        <div class="col-sm-4">
+          <div class="form-group">
+            <label for="">Your Email or Username</label>
+            <input
+              type="email"
+              class="form-control"
+              name=""
+              id="email"
+              aria-describedby="helpId"
+              placeholder=""
+              value=""
+            />
+          </div>
+          <button
+            type="button"
+            id="btnRegisterMessage"
+            onclick="registerMessage()"
+            class="btn btn-primary"
+            style="width: 100%"
+          >
+            Đăng ký nhận thông báo
+          </button>
+          <span id="message"></span>
+        </div>
+        <div class="col-sm-4"></div>
+      </div>
+      <div id="token"></div>
+      <div id="msg"></div>
+      <div id="notis"></div>
+      <div id="err"></div>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+      integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+      integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+      integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://www.gstatic.com/firebasejs/7.16.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.16.1/firebase-messaging.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.1/firebase-firestore.js"></script>
+    <script>
+      MsgElem = document.getElementById("msg");
+      TokenElem = document.getElementById("token");
+      NotisElem = document.getElementById("notis");
+      ErrElem = document.getElementById("err");
+
+      // Initialize Firebase
+      // TODO: Replace with your project's customized code snippet
+      var config = {
+        messagingSenderId: "774545478464",
+        apiKey: "AIzaSyAA1ZkkQYVBZdRCxZW_yW61PPZI-heKUz4",
+        authDomain: "vocabulary-chinese.firebaseapp.com",
+        databaseURL: "https://vocabulary-chinese.firebaseio.com",
+        projectId: "vocabulary-chinese",
+        storageBucket: "vocabulary-chinese.appspot.com",
+        messagingSenderId: "774545478464",
+        appId: "1:774545478464:web:185132c3fa4555346a20a5",
+        measurementId: "G-9Y1K92M54W",
+      };
+      firebase.initializeApp(config);
+      var listTokenBrowser = [];
+
+      const tokenBrowser = firebase.firestore().collection("tokenBrowser");
+      function registerMessage() {
+        if(email.value.trim() != ''){
+          const messaging = firebase.messaging();
+        messaging
+          .requestPermission()
+          .then(function () {
+            MsgElem.innerHTML = "Notification permission granted.";
+            console.log("Notification permission granted.");
+
+            // get the token in the form of promise
+            return messaging.getToken();
+          })
+          .then(function (token) {
+            tokenBrowser.onSnapshot(async (snapshot) => {
+              const data = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              }));
+              if (data.length == 0) {
+                tokenBrowser
+                  .add({
+                    email: email.value,
+                    browserId: getBrowserId(),
+                    token: token,
+                  })
+                  .then((ref) => {
+                    console.log("Added doc with ID: ", ref.id);
+                  });
+              }
+              let flag = 0;
+              await data.forEach((x) => {
+                console.log("data", x);
+                if (
+                  x.browserId === getBrowserId() &&
+                  x.token === token &&
+                  x.email === email.value
+                ) {
+                  flag++;
+                }
+              });
+              if (flag === 0) {
+                tokenBrowser
+                  .add({
+                    email: email.value,
+                    browserId: getBrowserId(),
+                    token: token,
+                  })
+                  .then((ref) => {
+                    console.log("Added doc with ID: ", ref.id);
+                    message.innerHTML = "Đăng ký thành công !";
+                  });
+              } else {
+                message.innerHTML = "Bạn đã đăng ký nhận thông báo rồi !";
+              }
+              //console.log("All data in 'tokenBrowser' collection", data);
+            });
+
+            TokenElem.innerHTML = "Your token is : " + token;
+          })
+          .catch(function (err) {
+            ErrElem.innerHTML = ErrElem.innerHTML + "; " + err;
+            console.log("Unable to get permission to notify.", err);
+          });
+
+        let enableForegroundNotification = true;
+        messaging.onMessage(function (payload) {
+          console.log("Message received. ", payload);
+          NotisElem.innerHTML = NotisElem.innerHTML + JSON.stringify(payload);
+
+          if (enableForegroundNotification) {
+            console.log(payload.data);
+            const { title, ...options } = JSON.parse(payload.data.notification);
+            navigator.serviceWorker.getRegistrations().then((registration) => {
+              registration[0].showNotification(title, options);
+            });
+          }
+        });
+        console.log("listToken", this.listTokenBrowser);
+        }
+        else{
+          message.innerHTML = "Vui lòng nhập Email hoặc Username !";
+        }
+        
+      }
+
+      function getBrowserId() {
+        var browserId = 0;
+        var Sys = {};
+        var ua = navigator.userAgent.toLowerCase();
+        var s;
+        (s = ua.match(/msie ([\d.]+)/))
+          ? (Sys.ie = s[1])
+          : (s = ua.match(/firefox\/([\d.]+)/))
+          ? (Sys.firefox = s[1])
+          : (s = ua.match(/chrome\/([\d.]+)/))
+          ? (Sys.chrome = s[1])
+          : (s = ua.match(/opera.([\d.]+)/))
+          ? (Sys.opera = s[1])
+          : (s = ua.match(/version\/([\d.]+).*safari/))
+          ? (Sys.safari = s[1])
+          : 0;
+
+        if (Sys.ie) browserId = "IE:" + Sys.ie;
+        if (Sys.firefox) browserId = "Firefox:" + Sys.firefox;
+        if (Sys.chrome) browserId = "Chrome:" + Sys.chrome;
+        if (Sys.opera) browserId = "Opera:" + Sys.opera;
+        if (Sys.safari) browserId = "Safari:" + Sys.safari;
+        return browserId;
+      }
+    </script>
+  </body>
+</html>

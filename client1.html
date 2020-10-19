@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Title</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-4"></div>
+        <div class="col-sm-4">
+          <div class="form-group">
+            <label for="">Title</label>
+            <input
+              type="text"
+              class="form-control"
+              name=""
+              id="titleMessage"
+              aria-describedby="helpId"
+              placeholder=""
+            />
+          </div>
+          <div class="form-group">
+            <label for="">Content</label>
+            <input
+              type="text"
+              class="form-control"
+              name=""
+              id="contentMessage"
+              aria-describedby="helpId"
+              placeholder=""
+            />
+          </div>
+          <div class="row" id="listBrowser">
+            <!-- <div class="col-sm-6">
+                <div class="form-check">
+                    <label class="form-check-label">
+                      <input type="checkbox" class="form-check-input" name="" id="" value="checkedValue" checked>
+                      Display value
+                    </label>
+                  </div>
+              </div> -->
+          </div>
+          <button
+            style="width: 100%"
+            type="button"
+            onclick="sendMessage()"
+            class="btn btn-primary"
+          >
+            Send
+          </button>
+        </div>
+        <div class="col-sm-4"></div>
+      </div>
+      <div class="col-sm-6"></div>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+      integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+      integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+      integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://www.gstatic.com/firebasejs/7.16.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.16.1/firebase-messaging.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.1/firebase-firestore.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <script>
+      var fcmKey =
+        "AAAAtFaCE0A:APA91bGmTL7FQVExTtYxIOc9-BS68L2TNPw5jzFPHT09jjMd0wsy0MgmIMpPZrE9YPNHw1Nd-wL0J2pw0L5B_W1xbbanuZEu4J5FsiBsk1OCBR4sOMIrx7I2Z7H8Do1HNWho0t1MekVf";
+      var fcmUrl = "https://fcm.googleapis.com/fcm/send";
+      var phoneToken =
+        "fC2yMrv3ULffR4bVWQ46Zm:APA91bE1Uf7aTBQHjWBCNQ89o6wG60bdAwKPDPrN2Ox1hTqABRmAiubZYdOpNXtFTxv9-hCBH2_uNcQynrWFiJJm1E6S0QQImsxyWnxUS0KpxTPYNZeUr6xvdP1fVsy_oyCEKPZfRZI3";
+      var config = {
+        messagingSenderId: "774545478464",
+        apiKey: "AIzaSyAA1ZkkQYVBZdRCxZW_yW61PPZI-heKUz4",
+        authDomain: "vocabulary-chinese.firebaseapp.com",
+        databaseURL: "https://vocabulary-chinese.firebaseio.com",
+        projectId: "vocabulary-chinese",
+        storageBucket: "vocabulary-chinese.appspot.com",
+        messagingSenderId: "774545478464",
+        appId: "1:774545478464:web:185132c3fa4555346a20a5",
+        measurementId: "G-9Y1K92M54W",
+      };
+      firebase.initializeApp(config);
+      const tokenBrowser = firebase.firestore().collection("tokenBrowser");
+
+      tokenBrowser.onSnapshot((snapshot) => {
+        let html = "";
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        data.forEach((x) => {
+          html += `<div class="col-sm-12">
+                <div class="form-check">
+                    <label class="form-check-label">
+                      <input type="checkbox" class="form-check-input" value="${x.token}">
+                      ${x.email + '-' + x.browserId}
+                    </label>
+                  </div>
+              </div>`;
+        });
+        listBrowser.innerHTML = html;
+      });
+      function sendMessage() {
+        var allVals = [];
+        $("input:checkbox:checked").each(function () {
+          allVals.push($(this).val()); //Use the $('this') selector
+        });
+        console.log(allVals);
+        allVals.forEach((x) => {
+          console.log("data", x);
+          let notification = buildNotification(x);
+          console.log(notification);
+          sendNotification(notification);
+        });
+        //GetComputerName();
+      }
+      function GetComputerName() {
+          try {
+            var network = new ActiveXObject("WScript.Network");
+            console.log(network);
+            // Show a pop up if it works
+            alert(network.computerName);
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      function buildNotification(browserToken) {
+        return {
+          data: {
+            notification: {
+              title: titleMessage.value,
+              body: contentMessage.value,
+              icon: "/Hito_Logo.jpg",
+            },
+          },
+          to: browserToken,
+        };
+      }
+
+      function buildRequest(notification) {
+        return {
+          url: fcmUrl,
+          method: "post",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `key=${fcmKey}`,
+          },
+          data: notification,
+        };
+      }
+      function sendNotification(notification) {
+        const request = buildRequest(notification);
+        axios(request)
+          .then((r) => {
+            console.log(r);
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      }
+    </script>
+  </body>
+</html>
