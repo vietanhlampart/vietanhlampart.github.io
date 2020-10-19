@@ -103,7 +103,7 @@
       const tokenBrowser = firebase.firestore().collection("tokenBrowser");
       function registerMessage() {
         if(email.value.trim() != ''){
-          const messaging = firebase.messaging();
+          const messaging = firebase.messaging().usePublicVapidKey("BMx7ESdMs-CIRkqPuVm6opcEhakmUVtj0viffts2bmXonRMbHYg7MaAe2Toocq1x-B__c9VwdUMG_xdn5QWS0-A");
         messaging
           .requestPermission()
           .then(function () {
